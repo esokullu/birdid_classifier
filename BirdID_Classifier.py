@@ -5,7 +5,7 @@ import tkFileDialog as tkfd
 import os
 
 class Application(ttk.Frame):
-    debug=true
+    debug=True
 
     # Button text strings - doing it this way lets you change the button
     # text on the fly by just reassinging the value of the variable
@@ -16,6 +16,9 @@ class Application(ttk.Frame):
     modelDirBrowseTitle = 'Choose directory containing model'
 
     modelIdentifierLabelText = 'Model identifier'
+    modelSelectDefault = 'None Selected'
+
+    modelPrefixLabelText = 'Model prefix'
 
     imageLabelText = 'Image directory'
     imageDirBrowseButtonText = '...'
@@ -45,7 +48,11 @@ class Application(ttk.Frame):
         # Setup to allow widgets to grow upon resizing
     	top=self.winfo_toplevel()
     	top.rowconfigure(0, weight=1)
-    	top.columnconfigure(0, weight=1)
+    	# top.columnconfigure(0, weight=1)
+        top.columnconfigure(0, weight=1)
+
+        self.columnconfigure(1, weight=1)
+        self.columnconfigure(3, weight=1)
 
     	# directory for loading model
     	col = 0
@@ -59,9 +66,9 @@ class Application(ttk.Frame):
         self.modelDirEntryText.set('')
         self.modelDirEntry = ttk.Entry(self, textvariable=self.modelDirEntryText,
             width=self.entryWidth)
-        self.modelDirEntry.grid(row=row, column=col,
-            padx=self.widgetPadX, pady=self.widgetPadY)
-        col += 1
+        self.modelDirEntry.grid(row=row, column=col, columnspan=3,
+            padx=self.widgetPadX, pady=self.widgetPadY, sticky=tk.W+tk.E)
+        col += 3
 
         self.modelDirBrowseButton = ttk.Button(self, 
             text=self.modelDirBrowseButtonText,
@@ -81,10 +88,29 @@ class Application(ttk.Frame):
         col += 1
 
         self.modelIdentifierCombo = ttk.Combobox(self, height=30, 
-            justify=tk.LEFT)
-        self.modelIdentifierCombo.bind('<<ComboboxSelected>>', self.handleModelSelection)
+            justify=tk.LEFT, values=[self.modelSelectDefault], state='disabled')
+        self.modelIdentifierCombo.current(0)
+        self.modelIdentifierCombo.bind('<<ComboboxSelected>>', 
+            self.handleModelSelection)
         self.modelIdentifierCombo.grid(row=row, column=col,
-            padx=self.widgetPadX, pady=self.widgetPadY, sticky=tk.W)
+            padx=self.widgetPadX, pady=self.widgetPadY, sticky=tk.W+tk.E)
+        col += 1
+
+        # Model prefix selection. Each identifier can have multiple prefixes
+        # associated with it.
+        self.modelPrefixLabel = ttk.Label(self,
+            text=self.modelPrefixLabelText)
+        self.modelPrefixLabel.grid(row=row, column=col,
+            padx=self.widgetPadX, pady=self.widgetPadY, sticky=tk.E)
+        col += 1
+
+        self.modelPrefixCombo = ttk.Combobox(self, height=15,
+            justify=tk.LEFT, values=[self.modelSelectDefault], state='disabled')
+        self.modelPrefixCombo.current(0)
+        self.modelPrefixCombo.bind('<<ComboboxSelected>>',
+            self.handleModelPrefixSelection)
+        self.modelPrefixCombo.grid(row=row, column=col,
+            padx=self.widgetPadX, pady=self.widgetPadY, sticky=tk.W+tk.E)
 
         row += 1
         col = 0
@@ -99,9 +125,9 @@ class Application(ttk.Frame):
         self.imageDirEntryText.set('')
         self.imageDirEntry = ttk.Entry(self, textvariable=self.imageDirEntryText,
             width=self.entryWidth)
-        self.imageDirEntry.grid(row=row, column=col,
-            padx=self.widgetPadX, pady=self.widgetPadY)
-        col += 1
+        self.imageDirEntry.grid(row=row, column=col,  columnspan=3,
+            padx=self.widgetPadX, pady=self.widgetPadY, sticky=tk.W+tk.E)
+        col += 3
 
         self.imageDirBrowseButton = ttk.Button(self, 
             text=self.imageDirBrowseButtonText,
@@ -122,9 +148,9 @@ class Application(ttk.Frame):
         self.destDirEntryText.set('')
         self.destDirEntry = ttk.Entry(self, textvariable=self.destDirEntryText,
             width=self.entryWidth)
-        self.destDirEntry.grid(row=row, column=col,
-            padx=self.widgetPadX, pady=self.widgetPadY)
-        col += 1
+        self.destDirEntry.grid(row=row, column=col,  columnspan=3,
+            padx=self.widgetPadX, pady=self.widgetPadY, sticky=tk.W+tk.E)
+        col += 3
 
         self.destDirBrowseButton = ttk.Button(self, 
             text=self.destDirBrowseButtonText,
@@ -138,26 +164,31 @@ class Application(ttk.Frame):
         self.classifyButton = ttk.Button(self, 
             text=self.classifyButtonText,
             command=self.classifyImages)
-        self.classifyButton.grid(row=row, column=col, columnspan=3,
+        self.classifyButton.grid(row=row, column=col, columnspan=5,
             padx=self.widgetPadX, pady=self.widgetPadY)
 
         row += 1
         col = 0
 
         separator = ttk.Separator(self, orient=tk.HORIZONTAL)
-        separator.grid(row=row, column=col, columnspan=3,
+        separator.grid(row=row, column=col, columnspan=5,
             pady=self.widgetPadY, sticky=tk.W+tk.E)
 
         row += 1
         col = 0
 
+        # Status area
         self.statusFrame = ttk.LabelFrame(self, text=self.statusLabelText,
             borderwidth=5, relief=tk.GROOVE)
-        self.statusFrame.grid(row=row, column=col, columnspan=3,
-            padx=self.widgetPadX, pady=self.widgetPadY)
+        self.statusFrame.grid(row=row, column=col, columnspan=5,
+            padx=self.widgetPadX, pady=self.widgetPadY, 
+            sticky=tk.N+tk.S+tk.E+tk.W)
+        self.rowconfigure(row, weight=1)
+        self.statusFrame.rowconfigure(0, weight=1);
+        self.statusFrame.columnconfigure(0, weight=1);
 
         self.statusField = tk.Text(self.statusFrame, height=10)
-        self.statusField.grid(row=0, column=0)
+        self.statusField.grid(row=0, column=0, sticky=tk.N+tk.S+tk.E+tk.W)
 
         row += 1
         col = 0
@@ -166,9 +197,13 @@ class Application(ttk.Frame):
     	#self.columnconfigure(col, weight=1)
         self.quitButton = ttk.Button(self, text=self.quitButtonText,
             command=self.quit)
-        self.quitButton.grid(row = row, column=col, columnspan=3,
+        self.quitButton.grid(row = row, column=col, columnspan=5,
             padx=self.widgetPadX, pady=self.widgetPadY)
         #self.quitButton.grid(column=col, row=row, sticky=tk.S+tk.E+tk.W)
+
+    def updateStatus(self, message):
+        self.statusField.insert('end', message + '\n')
+        return
 
     def modelDirBrowse(self):
         dirname = self.browseForDir(self.modelDirEntryText, 
@@ -180,8 +215,8 @@ class Application(ttk.Frame):
             fileList = os.listdir(dirname)
 
             # Debug - print out list of files in the model dir
-            if debug:
-                self.statusField.insert('end', '\nSelected model folder ' + dirname)
+            if self.debug:
+                self.updateStatus('Selected model folder ' + dirname)
                 print 'Files in model directory'
                 for fname in fileList:
                     print fname
@@ -190,7 +225,8 @@ class Application(ttk.Frame):
             # assumes filenames are presented in lexicographic ordering
             identifier = ''
             prefix = ''
-            self.allIdentifiers = []
+            self.allPrefixes = {}
+            self.allIdentifiers = [self.modelSelectDefault]
             self.allHists = []
             self.allVocabs = []
             self.allModels = []
@@ -200,13 +236,18 @@ class Application(ttk.Frame):
                     identifier = fname[0:fname.index('-hists')]
                     self.allIdentifiers.append(identifier)
                     self.allHists.append(fname)
+                    self.allPrefixes[identifier] = [self.modelSelectDefault]
                 elif fname.find('vocab') >= 0:
                     self.allVocabs.append(fname)
                 elif fname.find('model') >= 0:
                     self.allModels.append(fname)
+                    prefix = fname[0:fname.index('-')]
+                    self.allPrefixes[identifier].append(prefix)
+
 
             # Update the combo box with the list of available identifiers
-            self.modelIdentifierCombo.configure(values=self.allIdentifiers)
+            self.modelIdentifierCombo.configure(values=self.allIdentifiers,
+                state='Enabled')
 
         return
 
@@ -226,10 +267,13 @@ class Application(ttk.Frame):
 
     def handleModelSelection(self, evt):
         # Debugging
-        if debug:
+        if self.debug:
             print 'Called handleModelSelection()'
             selection = evt.widget.get()
-            self.statusField.insert('end', '\nSelected ' + selection)
+            self.updateStatus('Selected ' + selection)
+        return
+
+    def handleModelPrefixSelection(self, evt):
         return
 
     def classifyImages(self):
