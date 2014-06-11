@@ -241,7 +241,11 @@ class Application(ttk.Frame):
                     self.allVocabs.append(fname)
                 elif fname.find('model') >= 0:
                     self.allModels.append(fname)
+                    identifier = fname[fname.index('-')+1:fname.index('-model')]
                     prefix = fname[0:fname.index('-')]
+                    if self.debug:
+                        print 'Found prefix ' + prefix + ' for ID ' + \
+                            identifier
                     self.allPrefixes[identifier].append(prefix)
 
 
@@ -266,14 +270,24 @@ class Application(ttk.Frame):
         return dirname
 
     def handleModelSelection(self, evt):
+        self.selectedIdentifier = evt.widget.get()
+        print 'Available prefixes: %s' % str(self.allPrefixes[self.selectedIdentifier])
+        self.modelPrefixCombo.configure(
+            values=self.allPrefixes[self.selectedIdentifier], state='Enabled')
         # Debugging
         if self.debug:
             print 'Called handleModelSelection()'
             selection = evt.widget.get()
-            self.updateStatus('Selected ' + selection)
+            self.updateStatus('Selected model identifier ' + selection)
         return
 
     def handleModelPrefixSelection(self, evt):
+        self.selectedPrefix = evt.widget.get()
+
+        # Debugging
+        if self.debug:
+            print 'Called handleModelPrefixSelection()'
+            self.updateStatus('Selected model prefix ' + self.selectedPrefix)
         return
 
     def classifyImages(self):
