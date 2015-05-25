@@ -41,9 +41,6 @@ VERBOSE = True	# set to 'SVM' if you want to get the svm output
 
 class Configuration(object):
 	def __init__(self, identifier='', prefix=''):
-		# Path to image folder
-		#self.calDir = '../../../datasets/Caltech/101_ObjectCategories'
-		#self.calDir = '../../../data/101_ObjectCategories'
 		self.calDir = '../../../data/2014_winter/256x256/vlfeat_training_jpg'
 
 		# Path where training data will be stored
@@ -102,6 +99,8 @@ class Configuration(object):
 			message = "(self.numSpatialX != self.numSpatialY), because {0} != {1}".format(*messageformat)
 			raise ValueError(message)
 
+	def setClasses(self, classes):
+		self.classes = classes
 
 def ensure_type_array(data):
 	if (type(data) is not ndarray):
@@ -263,7 +262,6 @@ def trainVocab(selTrain, all_images, conf):
 	depict = []
 	for descr in descrs:
 		depict.append(descr[0])
-	#descrs = descrs[0]
 	descrs = depict
 	descrs = hstack(descrs)
 	n_features = descrs.shape[1]
@@ -279,7 +277,6 @@ def trainVocab(selTrain, all_images, conf):
 	return vocab
 
 def computeHistograms(all_images, model, conf):
-	a = datetime.now()
 	hists = []
 	pool = multiprocessing.Pool(processes=conf.numCore)
 	results = [pool.apply_async(getImageDescriptor, args=(model, imread(imagefname), ii)) for ii, imagefname in enumerate(all_images)]
@@ -288,7 +285,6 @@ def computeHistograms(all_images, model, conf):
 	for hist in hists:
 		hist.pop(0)
 	hists = vstack(hists)
-	print (str(datetime.now()-a)+" total histo completed")
 	return hists
 
 
@@ -382,7 +378,7 @@ if __name__ == '__main__':
 
 	classes = get_classes(conf.calDir, conf.numClasses)
 	print ("Class names" , classes)
-
+	conf.setClasses(classes)
 	model = Model(classes, conf)
 
 	# all_images_class_labels is an array containing the integer corresponding

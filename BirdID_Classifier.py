@@ -16,7 +16,7 @@ from shutil import copyfile
 from scipy.io import loadmat
 from sklearn.kernel_approximation import AdditiveChi2Sampler
 from cPickle import load
-import birdid_utils
+from birdid_utils import *
 
 VERBOSE = True
 
@@ -351,17 +351,17 @@ class Application(ttk.Frame):
 
         with open(resultPath, 'rb') as fp:
             conf = load(fp)
-            classes = load(fp)
+            classes = conf.classes
             if VERBOSE:
                 self.updateStatus(
-                    str(datetime.now()) + "Found classes " + str(classes))
+                    str(datetime.now()) + " Found classes " + str(classes))
 
         # The Model class is just a subset of the Configuration class wth
         # the set of categories added in. The categories aren't needed for
         # this preprocessing, since they only have an impact on the final
         # classification. We do need the class names to decide how to name
         # the destination folders, however.
-        model = birdid_utils.Model([], conf)
+        model = Model([], conf)
 
         # Load existing model for classification
         modelFileName = self.selectedPrefix + '-' + self.selectedIdentifier + \
@@ -382,11 +382,10 @@ class Application(ttk.Frame):
         imgPath = self.imageDirEntryText.get()
 
         # imgs contains the filenames of the files in the requested folder
-        imgs = birdid_utils.get_imgfiles(imgPath,
-                                         conf.extensions)
+        imgs = get_imgfiles(imgPath, conf.extensions)
 
         # Use vocabulary extracted from training images
-        model.vocab = loadmat(conf.vocabPath)['vocab']
+        model.vocab = loadmat(join(self.modelDirEntryText.get(), self.selectedIdentifier+"-vocab.py.mat"))['vocab'] #changed loadmat(conf.vocabPath)
 
         # Extract vocabulary from images to be classified. This is wrong, as 
         # I suspected. Results in everything being classified as a Cardinal.
@@ -394,7 +393,7 @@ class Application(ttk.Frame):
 
         # Compute spatial histograms from test images
         self.updateStatus(str(datetime.now()) + " Computing spatial histograms")
-        hists = birdid_utils.computeHistograms(imgs, model, conf)
+        hists = computeHistograms(imgs, model, conf)
 
         # Compute feature map of image data
         self.updateStatus(str(datetime.now()) + " Computing feature map")
@@ -421,8 +420,7 @@ class Application(ttk.Frame):
         i = 0
 
         for className in classes:
-            self.updateStatus("    " + className)
-            pathToClass.append(join(destFolder, className))
+            pathToClass.append(join(destFolder, str(className)))
             self.updateStatus("    " + pathToClass[i])
             if not exists(pathToClass[i]):
                 create_dir(pathToClass[i])
